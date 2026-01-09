@@ -1,0 +1,24 @@
+{
+  "folders": [
+    {
+      "name": ".hammerspoon",
+      "path": "."
+    },
+    {
+      "name": "hotkeys",
+      "path": "../hotkeys"
+    },
+    {
+      "name": "local-server",
+      "path": "../../Public/local-server"
+    },
+    {
+      "name": "hotkey-ref-webview",
+      "path": "../../Coding/hotkey-ref-webview"
+    }
+  ],
+  "settings": {
+    "files.autoSave": "onFocusChange",
+    "liveServer.settings.multiRootWorkspaceName": "hotkey-ref-webview"
+  }
+}

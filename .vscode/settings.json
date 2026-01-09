@@ -1,0 +1,8 @@
+{
+  "Lua.diagnostics.globals": ["hs", "spoon"],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "[lua]": {
+    "editor.defaultFormatter": "sumneko.lua"
+  }
+}

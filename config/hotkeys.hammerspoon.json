@@ -1,0 +1,60 @@
+{
+  "hotkeys": [
+    ["⌘⌥⌃", "g", "toggleHotkeyReference"],
+    ["⌘⌥⌃⇧", "T", "startKeyCapture"],
+    ["⌘⌥⌃", "V", "maximizeWindow"],
+    ["⌘⌥⌃", "C", "rightHalfWindow"],
+    ["⌘⌥⌃", "X", "leftHalfWindow"],
+
+    // NOTE: Removed because I don't use these
+    // ["⌘⌥⌃⇧", "C", "topHalfWindow"],
+    // ["⌘⌥⌃⇧", "X", "bottomHalfWindow"],
+    ["⌘⌥⌃⇧", "V", "almostMaximizeWindow"],
+    // NOTE: Removed because I don't use these
+    // ["⌘⌥⌃", "←", "bottomLeftQuarterWindow"],
+    // ["⌘⌥⌃", "↓", "bottomRightQuarterWindow"],
+    // ["⌘⌥⌃", "↑", "topLeftQuarterWindow"],
+    // ["⌘⌥⌃", "→", "topRightQuarterWindow"],
+    ["⌘⌥⌃", "⌫", "restoreWindow"],
+    ["⌘⌥⌃", "→", "nextDesktop"],
+    ["⌘⌥⌃", "←", "previousDesktop"],
+    // ["⌘⌥⌃⇧", "W", "toggleWebview"],
+    //
+    //
+    ["⌘⌥⌃", "W", "screenshotCaptureText"],
+    ["⌘⌥⌃", "R", "screenshotCaptureArea"],
+    ["⌘⌥⌃", "E", "screenshotCaptureFullscreen"],
+    ["⌘⌥⌃", "Q", "screenshotOpenHistory"],
+    ["⌘⌥⌃⇧", "Q", "screenshotSearchScreenshots"]
+    // ["⌘⌥⌃⇧", "S", "screenshotCaptureAllInOne"],
+    //
+    //
+    // NOTE: Using AltTab directly for these because the deeplink trigger version persists on screen until dismissed... slightly annoying.
+    // ["⌥", "⇥", "showAppSwitcher"],
+    // ["⌥", "`", "showWindowSwitcher"]
+  ],
+  // Application-specific hotkey layers
+  // These hotkeys are automatically bound when the specified application becomes active
+  // and unbound when switching to other applications.
+  // Use bundle IDs to identify applications (e.g., "com.apple.Safari", "com.google.Chrome")
+  // You can find bundle IDs by running: osascript -e 'id of app "AppName"'
+  "appLayers": {
+    // iTerm2-specific hotkeys
+    "com.googlecode.iterm2": {
+      "hotkeys": [["⌘", "D", "iterm2FzCmd"]]
+    }
+    // Example: Safari-specific hotkeys
+    // "com.apple.Safari": {
+    //   "hotkeys": [
+    //     ["⌘⌥⌃", "T", "someSafariAction"],
+    //     ["⌘⌥⌃", "N", "anotherSafariAction"]
+    //   ]
+    // },
+    // Example: Chrome-specific hotkeys
+    // "com.google.Chrome": {
+    //   "hotkeys": [
+    //     ["⌘⌥⌃", "T", "someChromeAction"]
+    //   ]
+    // }
+  }
+}
