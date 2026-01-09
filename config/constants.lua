@@ -16,7 +16,7 @@ constants.COLOR_BG_ERROR = { hue = 0.0, saturation = 0.6, brightness = 0.4, alph
 constants.COLOR_BORDER_ERROR = { hue = 0.0, saturation = 0.6, brightness = 0.4, alpha = 0.97 }
 
 -- Hotkey JSON loader
-constants.HOTKEY_JSON_PATH = "~/.hammerspoon/config/hotkeys.hammerspoon.json"
+constants.HOTKEY_JSON_PATH = "~/.hammerspoon/config/hotkeys.hammerspoon.jsonc"
 
 -- Alert message max length
 constants.ALERT_MESSAGE_MAX_LENGTH = 100

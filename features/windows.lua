@@ -5,13 +5,16 @@ local M = {}
 local ctx = nil
 
 function HK_almostMaximizeWindow()
+  ctx.log.all.log("HK_almostMaximizeWindow")
   if ctx then
     ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/almost-maximize")
   end
 end
 
 function HK_bottomHalfWindow()
+  ctx.log.all.log("HK_bottomHalfWindow")
   if ctx then
+    ctx.log.all.log("HK_bottomHalfWindow")
     ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/bottom-half")
   end
 end

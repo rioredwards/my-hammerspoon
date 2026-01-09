@@ -65,8 +65,7 @@ function M.convertKeySymbolToName(keyString)
   return keyString
 end
 
--- -- Loading hotkeys from: ~/.hammerspoon/config/hotkeys.hammerspoon.json
--- ~/.hammerspoon/config/hotkeys.hammerspoon.json
+-- -- Loading hotkeys from: ~/.hammerspoon/config/hotkeys.hammerspoon.jsonc
 
 -- Strip JSONC single-line comments (// ...) from JSON text
 -- Preserves // inside strings and handles escaped characters properly
@@ -133,7 +132,7 @@ function G_loadHotkeysFromJson()
   -- Read file as text to support JSONC comments
   local file = io.open(hotkeyJsonPath, "r")
   if not file then
-    ctx.log.all.error("Error: Failed to open hotkeys.hammerspoon.json")
+    ctx.log.all.error("Error: Failed to open hotkeys.hammerspoon.jsonc")
     return {}
   end
 
@@ -147,12 +146,12 @@ function G_loadHotkeysFromJson()
   local jsonData = hs.json.decode(cleanedJsonText)
 
   if not jsonData then
-    ctx.log.all.error("Error: Failed to parse hotkeys.hammerspoon.json")
+    ctx.log.all.error("Error: Failed to parse hotkeys.hammerspoon.jsonc")
     return {}
   end
 
   if not jsonData.hotkeys then
-    ctx.log.all.error("Error: hotkeys.hammerspoon.json missing 'hotkeys' array")
+    ctx.log.all.error("Error: hotkeys.hammerspoon.jsonc missing 'hotkeys' array")
     return {}
   end
 
@@ -209,7 +208,7 @@ function G_loadAppLayersFromJson()
   -- Read file as text to support JSONC comments
   local file = io.open(hotkeyJsonPath, "r")
   if not file then
-    ctx.log.all.error("Error: Failed to open hotkeys.hammerspoon.json for app layers")
+    ctx.log.all.error("Error: Failed to open hotkeys.hammerspoon.jsonc for app layers")
     return {}
   end
 
@@ -223,7 +222,7 @@ function G_loadAppLayersFromJson()
   local jsonData = hs.json.decode(cleanedJsonText)
 
   if not jsonData then
-    ctx.log.all.error("Error: Failed to parse hotkeys.hammerspoon.json for app layers")
+    ctx.log.all.error("Error: Failed to parse hotkeys.hammerspoon.jsonc for app layers")
     return {}
   end
 
