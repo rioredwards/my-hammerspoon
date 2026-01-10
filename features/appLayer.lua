@@ -7,9 +7,9 @@ local hotkeyJsonLoader = require "hotkeys.hotkeyJsonLoader"
 local ctx = nil
 local appWatcher = nil
 local currentAppLayer = nil
-local currentAppHotkeys = {} -- Table of hotkey objects to track for cleanup
-local appLayersData = {} -- Cached app layer definitions from JSON
-local hotkeyRegistry = {} -- Registry of hotkey combinations to prevent duplicates
+local currentAppHotkeys = {} -- Table of currently active hotkey objects
+local appLayersData = {}     -- Cached app layer definitions from JSON
+local appLayerHotkeys = {}   -- Cache of hotkey objects per bundle ID (so we can re-enable them)
 
 -- Get the bundle ID of the currently focused application
 local function getCurrentAppBundleId()
@@ -20,74 +20,71 @@ local function getCurrentAppBundleId()
   return nil
 end
 
--- Unbind all currently active app layer hotkeys
-local function unbindCurrentAppLayer()
+-- Disable all currently active app layer hotkeys (but keep them cached for re-enabling)
+local function disableCurrentAppLayer()
   if not currentAppHotkeys or #currentAppHotkeys == 0 then
     return
   end
 
-  for i, hotkeyObj in ipairs(currentAppHotkeys) do
+  for _, hotkeyObj in ipairs(currentAppHotkeys) do
     if hotkeyObj and type(hotkeyObj) == "userdata" then
-      -- Delete the hotkey (wrapped in pcall to handle any errors gracefully)
-      local success, err = pcall(function() hotkeyObj:delete() end)
+      -- Disable the hotkey (wrapped in pcall to handle any errors gracefully)
+      local success, err = pcall(function() hotkeyObj:disable() end)
       if not success and ctx then
-        ctx.log.console.warn(string.format("Failed to delete hotkey: %s", tostring(err)))
+        ctx.log.console.warn(string.format("Failed to disable hotkey: %s", tostring(err)))
       end
     end
   end
 
   currentAppHotkeys = {}
   currentAppLayer = nil
-  hotkeyRegistry = {} -- Clear the registry when unbinding
 end
 
--- Bind hotkeys for a specific app layer
-local function bindAppLayer(bundleId, layerData)
+-- Enable hotkeys for a specific app layer
+local function enableAppLayer(bundleId, layerData)
   if not ctx or not bundleId or not layerData then
     return
   end
 
-  -- Unbind any existing app layer hotkeys first
-  unbindCurrentAppLayer()
+  -- Disable any existing app layer hotkeys first
+  disableCurrentAppLayer()
 
   if not layerData.hotkeys or #layerData.hotkeys == 0 then
+    return
+  end
+
+  -- Check if we already have hotkeys created for this bundle ID
+  if appLayerHotkeys[bundleId] then
+    -- Re-enable existing hotkeys
+    for _, hotkeyObj in ipairs(appLayerHotkeys[bundleId]) do
+      hotkeyObj:enable()
+    end
+    currentAppLayer = bundleId
+    currentAppHotkeys = appLayerHotkeys[bundleId]
     return
   end
 
   -- Transform app layer hotkeys using the existing transformation logic
   local hotkeysTable = hotkeyJsonLoader.transformAppLayerHotkeys(layerData.hotkeys)
 
-  -- Bind each hotkey with wrapped action
+  -- Create and enable each hotkey
+  local hotkeyObjects = {}
   for _, hotkey in ipairs(hotkeysTable) do
     if not hotkey.action then
       goto continue
     end
 
-    -- Create a unique key for this hotkey combination to prevent duplicates
-    local hotkeyKey = table.concat(hotkey.mods, ",") .. ":" .. hotkey.key
-    
-    -- Skip if this hotkey is already bound (shouldn't happen, but safety check)
-    if hotkeyRegistry[hotkeyKey] then
-      ctx.log.console.warn(string.format("Hotkey %s already bound, skipping duplicate", hotkeyKey))
-      goto continue
-    end
-
-    -- Wrap the action to check if we're still in the correct app before executing
-    -- This ensures the hotkey only works when the app layer is active
-    local wrappedAction = function()
-      if currentAppLayer == bundleId then
-        hotkey.action()
-      end
-    end
-
-    -- Bind the hotkey with the wrapped action
-    local hotkeyObj = hs.hotkey.bind(hotkey.mods, hotkey.key, wrappedAction)
-    table.insert(currentAppHotkeys, hotkeyObj)
-    hotkeyRegistry[hotkeyKey] = true
+    -- Create the hotkey (disabled by default with hs.hotkey.new)
+    local hotkeyObj = hs.hotkey.new(hotkey.mods, hotkey.key, hotkey.action)
+    hotkeyObj:enable()
+    table.insert(hotkeyObjects, hotkeyObj)
 
     ::continue::
   end
 
+  -- Cache the hotkeys for this bundle ID so we can re-enable them later
+  appLayerHotkeys[bundleId] = hotkeyObjects
+  currentAppHotkeys = hotkeyObjects
   currentAppLayer = bundleId
 end
 
@@ -106,12 +103,12 @@ local function handleAppChange(name, eventType, app)
     -- Check if we have a layer defined for this app
     local layerData = appLayersData[bundleId]
     if layerData then
-      bindAppLayer(bundleId, layerData)
+      enableAppLayer(bundleId, layerData)
     else
-      -- App changed but no layer defined, unbind any active hotkeys
-      -- Always check and unbind if there are hotkeys bound (ensures cleanup even if state is inconsistent)
+      -- App changed but no layer defined, disable any active hotkeys
+      -- Always check and disable if there are hotkeys active (ensures cleanup even if state is inconsistent)
       if currentAppHotkeys and #currentAppHotkeys > 0 then
-        unbindCurrentAppLayer()
+        disableCurrentAppLayer()
       end
     end
   end
@@ -129,7 +126,7 @@ local function loadAppLayersFromJson()
   end
 
   appLayersData = _G.G_loadAppLayersFromJson()
-  
+
   local count = 0
   for _ in pairs(appLayersData) do
     count = count + 1
@@ -156,10 +153,10 @@ function M.init(context)
   appWatcher = hs.application.watcher.new(handleAppChange)
   appWatcher:start()
 
-  -- Trigger initial app layer binding for current app
+  -- Trigger initial app layer enabling for current app
   local currentBundleId = getCurrentAppBundleId()
   if currentBundleId and appLayersData[currentBundleId] then
-    bindAppLayer(currentBundleId, appLayersData[currentBundleId])
+    enableAppLayer(currentBundleId, appLayersData[currentBundleId])
   end
 
   -- Export helper function to global scope
@@ -171,4 +168,3 @@ function M.init(context)
 end
 
 return M
-
