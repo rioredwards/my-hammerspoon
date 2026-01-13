@@ -20,24 +20,30 @@ local function getCurrentAppBundleId()
   return nil
 end
 
--- Disable all currently active app layer hotkeys (but keep them cached for re-enabling)
+-- Disable all currently active app layer hotkeys (delete them to ensure they don't intercept)
 local function disableCurrentAppLayer()
   if not currentAppHotkeys or #currentAppHotkeys == 0 then
     return
   end
 
+  if ctx then
+    ctx.log.console.log(string.format("Disabling %d app layer hotkeys", #currentAppHotkeys))
+  end
+
   for _, hotkeyObj in ipairs(currentAppHotkeys) do
     if hotkeyObj and type(hotkeyObj) == "userdata" then
-      -- Disable the hotkey (wrapped in pcall to handle any errors gracefully)
-      local success, err = pcall(function() hotkeyObj:disable() end)
+      -- Delete the hotkey to ensure it's completely removed and doesn't intercept
+      local success, err = pcall(function() hotkeyObj:delete() end)
       if not success and ctx then
-        ctx.log.console.warn(string.format("Failed to disable hotkey: %s", tostring(err)))
+        ctx.log.console.warn(string.format("Failed to delete hotkey: %s", tostring(err)))
       end
     end
   end
 
   currentAppHotkeys = {}
   currentAppLayer = nil
+  -- Clear the cache so hotkeys are recreated fresh each time
+  appLayerHotkeys = {}
 end
 
 -- Enable hotkeys for a specific app layer
