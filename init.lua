@@ -40,7 +40,7 @@ local features = {
   { name = "openYoutubeLinksInCorrectChromeProfile", path = "features.openYoutubeLinksInCorrectChromeProfile" },
   { name = "ensureLocalServer",                      path = "features.ensureLocalServer" },
   { name = "webview",                                path = "features.webview" },
-  { name = "lockScreen",                             path = "features.lockScreen" },
+  -- { name = "lockScreen",                             path = "features.lockScreen" },
   { name = "reloadConfigurationDebounced",           path = "features.reloadConfigurationDebounced" },
   { name = "screenshot",                             path = "features.screenshot" },
   { name = "appSwitcher",                            path = "features.appSwitcher" },
@@ -48,7 +48,7 @@ local features = {
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
-  { name = "appLayer",                               path = "features.appLayer" },
+  -- { name = "appLayer",                               path = "features.appLayer" },
 }
 
 -- Phase 4: Load features as plugins
