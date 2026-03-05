@@ -4,17 +4,6 @@ local M = {}
 
 local ctx = nil
 
-local function trimLines(text)
-  text = text:gsub("\r\n", "\n"):gsub("\r", "\n")
-
-  local lines = {}
-  for line in text:gmatch("([^\n]*)\n?") do
-    table.insert(lines, line:match("^%s*(.-)%s*$"))
-  end
-  text = table.concat(lines, "\n")
-  return text:gsub("^\n+", ""):gsub("\n+$", "")
-end
-
 function HK_clipboardJoinLines()
   local text = hs.pasteboard.getContents()
   if not text or text == "" then return end
@@ -36,10 +25,24 @@ function HK_clipboardTrimLines()
   local text = hs.pasteboard.getContents()
   if not text or text == "" then return end
 
-  hs.pasteboard.setContents(trimLines(text))
-  if ctx then
-    ctx.log.alert.success("Clipboard lines trimmed")
-  end
+  hs.timer.doAfter(0.1, function()
+    local text = hs.pasteboard.getContents()
+    if not text or text == "" then return end
+
+    text = text:gsub("\r\n", "\n"):gsub("\r", "\n")
+
+    local lines = {}
+    for line in text:gmatch("([^\n]*)\n?") do
+      table.insert(lines, line:match("^%s*(.-)%s*$"))
+    end
+    text = table.concat(lines, "\n")
+    text = text:gsub("^\n+", ""):gsub("\n+$", "")
+
+    hs.pasteboard.setContents(text)
+    if ctx then
+      ctx.log.alert.success("Clipboard lines trimmed")
+    end
+  end)
 end
 
 function HK_copyAndTrimLines()
