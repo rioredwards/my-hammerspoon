@@ -48,6 +48,7 @@ local features = {
   { name = "iterm2",                                 path = "features.iterm2" },
   { name = "appLauncher",                            path = "features.appLauncher" },
   { name = "search",                                 path = "features.search" },
+  { name = "pickColor",                              path = "features.pickColor" },
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
