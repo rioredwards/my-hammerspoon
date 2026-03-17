@@ -47,6 +47,7 @@ local features = {
   { name = "appSwitcher",                            path = "features.appSwitcher" },
   { name = "iterm2",                                 path = "features.iterm2" },
   { name = "appLauncher",                            path = "features.appLauncher" },
+  { name = "search",                                 path = "features.search" },
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
