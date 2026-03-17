@@ -46,6 +46,7 @@ local features = {
   { name = "clipboard",                              path = "features.clipboard" },
   { name = "appSwitcher",                            path = "features.appSwitcher" },
   { name = "iterm2",                                 path = "features.iterm2" },
+  { name = "appLauncher",                            path = "features.appLauncher" },
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
