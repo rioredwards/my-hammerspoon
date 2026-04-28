@@ -5,6 +5,9 @@
 local M = {}
 
 local ctx = nil
+-- Pixels to reserve at top/bottom of hs.screen:frame() for HUD bars (set from constants in init).
+local insetTopPx = 0
+local insetBottomPx = 0
 
 -- { winId = number, edge = string, step = 0|1|2 }; step indexes the rects below (0-based after advance).
 local snapCycle = { winId = nil, edge = nil, step = 0 }
@@ -39,9 +42,26 @@ local function clearSnapCycle()
   snapCycle.step = 0
 end
 
--- Second arg 0 disables transition; default follows hs.window.animationDuration (often 0.2s).
+--- Usable rect for tiling: screen frame minus HUD strips (unit rects 0–1 map within this).
+local function workAreaForWindow(win)
+  local f = win:screen():frame()
+  return {
+    x = f.x,
+    y = f.y + insetTopPx,
+    w = f.w,
+    h = f.h - insetTopPx - insetBottomPx,
+  }
+end
+
+-- Second arg 0 disables transition; avoids moveToUnit so we respect HUD insets.
 local function tile(win, unit)
-  win:moveToUnit(unit, 0)
+  local wa = workAreaForWindow(win)
+  win:setFrame({
+    x = wa.x + unit.x * wa.w,
+    y = wa.y + unit.y * wa.h,
+    w = unit.w * wa.w,
+    h = unit.h * wa.h,
+  }, 0)
 end
 
 local function withFocused(fn)
@@ -150,6 +170,9 @@ function M.init(context)
   local result = require "core.utils.result"
 
   ctx = context
+
+  insetTopPx = ctx.constants.TILE_HUD_TOP_INSET_PX or 0
+  insetBottomPx = ctx.constants.TILE_HUD_BOTTOM_INSET_PX or 0
 
   -- Instant resizes for any code that omits an explicit duration (default is 0.2).
   hs.window.animationDuration = 0
