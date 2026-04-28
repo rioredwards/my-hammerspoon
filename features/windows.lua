@@ -12,7 +12,6 @@ end
 
 function HK_bottomHalfWindow()
   if ctx then
-    ctx.log.all.log("HK_bottomHalfWindow")
     ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/bottom-half")
   end
 end
