@@ -1,43 +1,56 @@
--- Raycast deep link URLs for window management
+-- Window tiling via hs.window (see https://www.hammerspoon.org/go/#winresize).
+-- Restore and space switching stay on Raycast deep links.
 
 local M = {}
 
 local ctx = nil
 
-function HK_almostMaximizeWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/almost-maximize")
+-- Second arg 0 disables transition; default follows hs.window.animationDuration (often 0.2s).
+local function tile(win, unit)
+  win:moveToUnit(unit, 0)
+end
+
+local function withFocused(fn)
+  local win = hs.window.focusedWindow()
+  if win then
+    fn(win)
   end
+end
+
+function HK_almostMaximizeWindow()
+  withFocused(function(win)
+    tile(win, { x = 0.03, y = 0.03, w = 0.94, h = 0.94 })
+  end)
 end
 
 function HK_bottomHalfWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/bottom-half")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0, y = 0.5, w = 1, h = 0.5 })
+  end)
 end
 
 function HK_bottomLeftQuarterWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/bottom-left-quarter")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0, y = 0.5, w = 0.5, h = 0.5 })
+  end)
 end
 
 function HK_bottomRightQuarterWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/bottom-right-quarter")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0.5, y = 0.5, w = 0.5, h = 0.5 })
+  end)
 end
 
 function HK_leftHalfWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/left-half")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0, y = 0, w = 0.5, h = 1 })
+  end)
 end
 
 function HK_maximizeWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/maximize")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0, y = 0, w = 1, h = 1 })
+  end)
 end
 
 function HK_restoreWindow()
@@ -47,30 +60,29 @@ function HK_restoreWindow()
 end
 
 function HK_rightHalfWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/right-half")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0.5, y = 0, w = 0.5, h = 1 })
+  end)
 end
 
 function HK_topHalfWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/top-half")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0, y = 0, w = 1, h = 0.5 })
+  end)
 end
 
 function HK_topLeftQuarterWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/top-left-quarter")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0, y = 0, w = 0.5, h = 0.5 })
+  end)
 end
 
 function HK_topRightQuarterWindow()
-  if ctx then
-    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/top-right-quarter")
-  end
+  withFocused(function(win)
+    tile(win, { x = 0.5, y = 0, w = 0.5, h = 0.5 })
+  end)
 end
 
--- Desktop/Space switching functions
 function HK_nextDesktop()
   if ctx then
     ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/next-desktop")
@@ -88,7 +100,9 @@ function M.init(context)
 
   ctx = context
 
-  -- All HK_ functions are already exported to global scope
+  -- Instant resizes for any code that omits an explicit duration (default is 0.2).
+  hs.window.animationDuration = 0
+
   ctx.log.console.success("Windows feature initialized")
 
   return result.ok()
