@@ -15,9 +15,9 @@ constants.COLOR_BORDER_WARNING = { hue = 0.15, saturation = 0.6, brightness = 0.
 constants.COLOR_BG_ERROR = { hue = 0.0, saturation = 0.6, brightness = 0.4, alpha = 0.8 }
 constants.COLOR_BORDER_ERROR = { hue = 0.0, saturation = 0.6, brightness = 0.4, alpha = 0.97 }
 
--- Reserved strip for menu-bar HUD app (px); tiling uses the remaining area so windows sit flush below/above it.
-constants.TILE_HUD_TOP_INSET_PX = 12
-constants.TILE_HUD_BOTTOM_INSET_PX = 0
+-- Reserved strip at screen bottom (px) for dock/HUD; tiling uses area above it (windows flush to top).
+constants.TILE_HUD_TOP_INSET_PX = 0
+constants.TILE_HUD_BOTTOM_INSET_PX = 12
 
 -- Hotkey JSON loader
 constants.HOTKEY_JSON_PATH = "~/.hammerspoon/config/hotkeys.hammerspoon.jsonc"
