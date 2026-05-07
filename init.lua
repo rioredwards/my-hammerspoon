@@ -49,6 +49,7 @@ local features = {
   { name = "appLauncher",                            path = "features.appLauncher" },
   { name = "search",                                 path = "features.search" },
   { name = "pickColor",                              path = "features.pickColor" },
+  { name = "larryPet",                               path = "features.larryPet" },
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
@@ -118,6 +119,7 @@ for _, feature in ipairs(features) do
 end
 
 -- Phase 5: Configure Hammerspoon
+require("hs.ipc")
 hs.allowAppleScript(true)
 hs.application.enableSpotlightForNameSearches(true)
 
