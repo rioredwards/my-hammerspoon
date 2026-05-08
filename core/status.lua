@@ -12,6 +12,23 @@ function status.record(name, result)
   results[name] = result
 end
 
+-- Record a feature as disabled by user preference
+-- @param name Feature name
+-- @param msg Human-readable reason
+-- @param meta Optional metadata table
+function status.recordDisabled(name, msg, meta)
+  meta = meta or {}
+  meta.level = "info"
+
+  results[name] = {
+    ok = false,
+    disabled = true,
+    code = "USER_DISABLED",
+    msg = msg or "Disabled by user preference",
+    meta = meta
+  }
+end
+
 -- Get the result for a specific feature
 -- @param name Feature name
 -- @return Result table or nil
@@ -31,6 +48,7 @@ function status.summary()
   local summary = {
     ok = 0,
     warn = 0,
+    disabled = 0,
     error = 0,
     total = 0
   }
@@ -39,6 +57,8 @@ function status.summary()
     summary.total = summary.total + 1
     if result.ok then
       summary.ok = summary.ok + 1
+    elseif result.disabled then
+      summary.disabled = summary.disabled + 1
     elseif result.level == "warn" then
       summary.warn = summary.warn + 1
     else
@@ -61,8 +81,11 @@ function status.formatSummary()
   if s.warn > 0 then
     table.insert(parts, "⚠️ " .. s.warn .. " warning" .. (s.warn > 1 and "s" or ""))
   end
+  if s.disabled > 0 then
+    table.insert(parts, "⏸️ " .. s.disabled .. " disabled")
+  end
   if s.error > 0 then
-    table.insert(parts, "❌ " .. s.error .. " disabled")
+    table.insert(parts, "❌ " .. s.error .. " failed")
   end
 
   if #parts == 0 then
@@ -80,22 +103,31 @@ function status.getDetails()
   for name, result in pairs(results) do
     local statusIcon
     local statusText
+    local statusClass
 
     if result.ok then
       statusIcon = "✅"
       statusText = "Loaded"
+      statusClass = "ok"
+    elseif result.disabled then
+      statusIcon = "⏸️"
+      statusText = "Disabled"
+      statusClass = "disabled"
     elseif result.level == "warn" then
       statusIcon = "⚠️"
       statusText = "Warning"
+      statusClass = "warn"
     else
       statusIcon = "❌"
-      statusText = "Disabled"
+      statusText = "Error"
+      statusClass = "error"
     end
 
     table.insert(details, {
       name = name,
       icon = statusIcon,
       status = statusText,
+      statusClass = statusClass,
       message = result.msg or "",
       code = result.code
     })

@@ -15,6 +15,7 @@ local utils = coreModules.utils
 local result = coreModules.result
 local contextModule = coreModules.context
 local status = coreModules.status
+local settingsKey = "hammerspoon.disabledFeatures"
 
 -- Phase 2: Create context object
 local ctx = contextModule.create(
@@ -27,12 +28,40 @@ local ctx = contextModule.create(
 -- Update context with status (circular dependency resolved)
 ctx.status = status
 
+local function loadDisabledFeatureMap()
+  local stored = hs.settings.get(settingsKey)
+  local disabled = {}
+
+  if type(stored) == "table" then
+    for _, name in ipairs(stored) do
+      if type(name) == "string" and name ~= "" then
+        disabled[name] = true
+      end
+    end
+  end
+
+  return disabled
+end
+
+local function saveDisabledFeatureMap(disabledMap)
+  local names = {}
+
+  for name, isDisabled in pairs(disabledMap) do
+    if isDisabled then
+      table.insert(names, name)
+    end
+  end
+
+  table.sort(names)
+  hs.settings.set(settingsKey, names)
+end
+
 -- Phase 3: Feature registry
 -- Define all features to load, in order
 -- Hotkeys must be loaded last since they depend on HK_ functions
 local features = {
   -- Status dashboard (load early to track other features)
-  { name = "statusDashboard",                        path = "features.statusDashboard" },
+  { name = "statusDashboard",                        path = "features.statusDashboard", locked = true },
   -- Utility features
   { name = "windows",                                path = "features.windows" },
   { name = "showCalendar",                           path = "features.showCalendar" },
@@ -56,64 +85,123 @@ local features = {
   -- { name = "appLayer",                               path = "features.appLayer" },
 }
 
+local disabledFeatures = loadDisabledFeatureMap()
+
+local function isFeatureLocked(featureName)
+  for _, feature in ipairs(features) do
+    if feature.name == featureName then
+      return feature.locked == true
+    end
+  end
+
+  return false
+end
+
+for _, feature in ipairs(features) do
+  if feature.locked then
+    disabledFeatures[feature.name] = nil
+  end
+end
+
+saveDisabledFeatureMap(disabledFeatures)
+
+local function isFeatureEnabled(featureName)
+  if isFeatureLocked(featureName) then
+    return true
+  end
+
+  return not disabledFeatures[featureName]
+end
+
+local function setFeatureEnabled(featureName, enabled)
+  if isFeatureLocked(featureName) then
+    return
+  end
+
+  if enabled then
+    disabledFeatures[featureName] = nil
+  else
+    disabledFeatures[featureName] = true
+  end
+
+  saveDisabledFeatureMap(disabledFeatures)
+end
+
+local function toggleFeature(featureName)
+  setFeatureEnabled(featureName, not isFeatureEnabled(featureName))
+end
+
+ctx.features = {
+  list = features,
+  isEnabled = isFeatureEnabled,
+  setEnabled = setFeatureEnabled,
+  toggle = toggleFeature,
+  isLocked = isFeatureLocked
+}
+
 -- Phase 4: Load features as plugins
 local loadedFeatures = {}
 
 for _, feature in ipairs(features) do
-  local success, module = pcall(function()
-    return require(feature.path)
-  end)
-
-  if not success then
-    -- Syntax error or module not found - hard fail for core issues
-    local errorMsg = string.format("Failed to load module '%s': %s", feature.path, tostring(module))
-    log.all.error(errorMsg)
-    log.alert.error("Critical: " .. errorMsg)
-    -- Continue loading other features, but record the failure
-    status.record(feature.name, result.fail("MODULE_LOAD_ERROR", errorMsg))
+  if not isFeatureEnabled(feature.name) and not feature.locked then
+    status.recordDisabled(feature.name, "Disabled in menu", { source = "menu" })
+    log.console.log(string.format("Feature '%s' skipped (disabled in menu)", feature.name))
   else
-    -- Module loaded, try to initialize
-    if type(module) == "table" and type(module.init) == "function" then
-      local initSuccess, initResult = pcall(function()
-        return module.init(ctx)
-      end)
+    local success, module = pcall(function()
+      return require(feature.path)
+    end)
 
-      if not initSuccess then
-        -- Exception during init
-        local errorMsg = string.format("Exception during init of '%s': %s", feature.name, tostring(initResult))
-        log.all.error(errorMsg)
-        status.record(feature.name, result.fail("INIT_EXCEPTION", errorMsg))
-      elseif initResult and type(initResult) == "table" then
-        -- Got a result table
-        status.record(feature.name, initResult)
+    if not success then
+      -- Syntax error or module not found - hard fail for core issues
+      local errorMsg = string.format("Failed to load module '%s': %s", feature.path, tostring(module))
+      log.all.error(errorMsg)
+      log.alert.error("Critical: " .. errorMsg)
+      -- Continue loading other features, but record the failure
+      status.record(feature.name, result.fail("MODULE_LOAD_ERROR", errorMsg))
+    else
+      -- Module loaded, try to initialize
+      if type(module) == "table" and type(module.init) == "function" then
+        local initSuccess, initResult = pcall(function()
+          return module.init(ctx)
+        end)
 
-        if not initResult.ok then
-          -- Feature failed to initialize
-          local level = initResult.level or "error"
-          local msg = string.format("Feature '%s' disabled: %s", feature.name, initResult.msg or "Unknown error")
+        if not initSuccess then
+          -- Exception during init
+          local errorMsg = string.format("Exception during init of '%s': %s", feature.name, tostring(initResult))
+          log.all.error(errorMsg)
+          status.record(feature.name, result.fail("INIT_EXCEPTION", errorMsg))
+        elseif initResult and type(initResult) == "table" then
+          -- Got a result table
+          status.record(feature.name, initResult)
 
-          if level == "warn" then
-            log.alert.warn(msg)
-            log.all.error(msg)
+          if not initResult.ok then
+            -- Feature failed to initialize
+            local level = initResult.level or "error"
+            local msg = string.format("Feature '%s' disabled: %s", feature.name, initResult.msg or "Unknown error")
+
+            if level == "warn" then
+              log.alert.warn(msg)
+              log.all.error(msg)
+            else
+              log.all.error(msg)
+            end
           else
-            log.all.error(msg)
+            -- Feature initialized successfully
+            loadedFeatures[feature.name] = module
+            log.console.success(string.format("Feature '%s' loaded successfully", feature.name))
           end
         else
-          -- Feature initialized successfully
+          -- No result returned, assume success
+          status.record(feature.name, result.ok())
           loadedFeatures[feature.name] = module
-          log.console.success(string.format("Feature '%s' loaded successfully", feature.name))
+          log.all.log(string.format("Feature '%s' loaded (no result returned)", feature.name))
         end
       else
-        -- No result returned, assume success
-        status.record(feature.name, result.ok())
+        -- Module doesn't have init() - legacy module, assume success
+        status.record(feature.name, result.ok({ legacy = true }))
         loadedFeatures[feature.name] = module
-        log.all.log(string.format("Feature '%s' loaded (no result returned)", feature.name))
+        log.all.log(string.format("Feature '%s' loaded (legacy module)", feature.name))
       end
-    else
-      -- Module doesn't have init() - legacy module, assume success
-      status.record(feature.name, result.ok({ legacy = true }))
-      loadedFeatures[feature.name] = module
-      log.all.log(string.format("Feature '%s' loaded (legacy module)", feature.name))
     end
   end
 end

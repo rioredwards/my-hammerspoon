@@ -5,6 +5,52 @@ local M = {}
 
 local menubarItem = nil
 
+local function buildFeatureToggleItem(ctx, feature, statusByName)
+  local featureState = ctx.features
+  local enabled = true
+  if featureState and featureState.isEnabled then
+    enabled = featureState.isEnabled(feature.name)
+  end
+
+  local locked = feature.locked == true
+  if featureState and featureState.isLocked then
+    locked = locked or featureState.isLocked(feature.name)
+  end
+
+  if locked then
+    enabled = true
+  end
+
+  local detail = statusByName[feature.name]
+  local title = feature.name
+
+  if locked then
+    title = title .. " (locked)"
+  elseif detail and detail.status == "Disabled" then
+    title = title .. " (off)"
+  end
+
+  local item = {
+    title = title,
+    checked = enabled,
+    disabled = locked
+  }
+
+  if not locked then
+    item.fn = function()
+      if not ctx.features or not ctx.features.setEnabled then
+        return
+      end
+
+      ctx.features.setEnabled(feature.name, not enabled)
+      ctx.log.console.log(string.format("Feature '%s' toggled to %s", feature.name, not enabled and "off" or "on"))
+      hs.timer.doAfter(0.05, hs.reload)
+    end
+  end
+
+  return item
+end
+
 -- Create offline HTML for webview status display
 local function createStatusHTML(details)
   local html = [[
@@ -40,6 +86,9 @@ local function createStatusHTML(details)
     .feature.error {
       border-left: 3px solid #f44336;
     }
+    .feature.disabled {
+      border-left: 3px solid #9e9e9e;
+    }
     .feature-name {
       font-weight: bold;
       margin-bottom: 5px;
@@ -69,7 +118,7 @@ local function createStatusHTML(details)
     <div class="feature-name">%s %s</div>
     <div class="feature-message">%s</div>
   </div>
-]], feature.status, feature.icon, feature.name, feature.message or "")
+]], feature.statusClass or feature.status, feature.icon, feature.name, feature.message or "")
   end
 
   html = html .. [[
@@ -95,6 +144,8 @@ local function updateMenubar(ctx)
     icon = "❌"
   elseif summaryDetails.warn > 0 then
     icon = "⚠️"
+  elseif summaryDetails.disabled > 0 then
+    icon = "⏸️"
   end
 
   menubarItem:setTitle(icon .. " " .. summaryDetails.total)
@@ -144,6 +195,12 @@ function M.init(ctx)
   -- Create menu
   menubarItem:setMenu(function()
     local menu = {}
+    local details = ctx.status.getDetails()
+    local detailsByName = {}
+
+    for _, feature in ipairs(details) do
+      detailsByName[feature.name] = feature
+    end
 
     -- Summary line
     local summary = ctx.status.formatSummary()
@@ -163,13 +220,21 @@ function M.init(ctx)
     })
 
     table.insert(menu, { title = "-" })
+    table.insert(menu, {
+      title = "Checked items are enabled. Click to toggle and reload.",
+      disabled = true
+    })
 
-    -- Individual feature status
-    local details = ctx.status.getDetails()
-    for _, feature in ipairs(details) do
+    table.insert(menu, { title = "-" })
+
+    -- Individual feature toggles
+    for _, feature in ipairs(ctx.features and ctx.features.list or {}) do
+      local item = buildFeatureToggleItem(ctx, feature, detailsByName)
       table.insert(menu, {
-        title = feature.icon .. " " .. feature.name .. (feature.message ~= "" and (" - " .. feature.message) or ""),
-        disabled = true
+        title = item.title,
+        checked = item.checked,
+        disabled = item.disabled,
+        fn = item.fn
       })
     end
 
