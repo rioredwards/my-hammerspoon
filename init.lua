@@ -61,7 +61,7 @@ end
 -- Hotkeys must be loaded last since they depend on HK_ functions
 local features = {
   -- Status dashboard (load early to track other features)
-  { name = "statusDashboard",                        path = "features.statusDashboard", locked = true },
+  { name = "statusDashboard",                        path = "features.statusDashboard",                       locked = true },
   -- Utility features
   { name = "windows",                                path = "features.windows" },
   { name = "showCalendar",                           path = "features.showCalendar" },
@@ -79,6 +79,7 @@ local features = {
   { name = "search",                                 path = "features.search" },
   { name = "pickColor",                              path = "features.pickColor" },
   { name = "larryPet",                               path = "features.larryPet" },
+  { name = "clipboardFormatter",                      path = "features.clipboardFormatter" },
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
