@@ -1,0 +1,4 @@
+# Local agent skill symlinks (managed via lnskill on each machine)
+.claude/
+.codex/
+.agents/skills/rio-module-recenter
