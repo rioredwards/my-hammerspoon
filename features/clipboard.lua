@@ -1,78 +1,121 @@
--- Clipboard utilities
+-- Clipboard typing utility
 
 local M = {}
 
 local ctx = nil
+local typingTimer = nil
+local typingRunId = 0
+local cancelHotkey = nil
 
-function HK_clipboardJoinLines()
-  local text = hs.pasteboard.getContents()
-  if not text or text == "" then return end
+local INITIAL_DELAY = 0.5
+local KEY_DELAY = 0.01
 
-  text = text:gsub("\r\n", "\n")
-      :gsub("\r", "\n")
-      :gsub("^%s+", "")
-      :gsub("%s+$", "")
-      :gsub("\n+", " ")
-      :gsub("%s%s+", " ")
+local CANCEL_MODS = {}
+local CANCEL_KEY = "escape"
 
-  hs.pasteboard.setContents(text)
-  if ctx then
-    ctx.log.alert.success("Clipboard joined")
+local function warn(message)
+  if ctx then ctx.log.alert.warn(message) end
+end
+
+local function success(message)
+  if ctx then ctx.log.alert.success(message) end
+end
+
+local function unregisterCancelHotkey()
+  if cancelHotkey then
+    cancelHotkey:delete()
+    cancelHotkey = nil
   end
 end
 
-function HK_clipboardTrimLines()
-  local text = hs.pasteboard.getContents()
-  if not text or text == "" then return end
+local function stopTyping()
+  if typingTimer then
+    typingTimer:stop()
+    typingTimer = nil
+  end
 
-  hs.timer.doAfter(0.1, function()
-    local text = hs.pasteboard.getContents()
-    if not text or text == "" then return end
+  unregisterCancelHotkey()
+end
 
-    text = text:gsub("\r\n", "\n"):gsub("\r", "\n")
+local function cancelTyping(message)
+  typingRunId = typingRunId + 1
+  stopTyping()
 
-    local lines = {}
-    for line in text:gmatch("([^\n]*)\n?") do
-      table.insert(lines, line:match("^%s*(.-)%s*$"))
-    end
-    text = table.concat(lines, "\n")
-    text = text:gsub("^\n+", ""):gsub("\n+$", "")
+  if message then
+    warn(message)
+  end
+end
 
-    hs.pasteboard.setContents(text)
-    if ctx then
-      ctx.log.alert.success("Clipboard lines trimmed")
-    end
+local function registerCancelHotkey()
+  if cancelHotkey then return end
+
+  cancelHotkey = hs.hotkey.bind(CANCEL_MODS, CANCEL_KEY, function()
+    M.cancelTypeClipboard()
   end)
 end
 
-function HK_copyAndTrimLines()
-  hs.eventtap.keyStroke({ "cmd" }, "C")
-  hs.timer.doAfter(0.1, function()
-    local text = hs.pasteboard.getContents()
-    if not text or text == "" then return end
+local function nextUtf8Char(text, byteIndex)
+  if byteIndex > #text then
+    return nil, byteIndex
+  end
 
-    text = text:gsub("\r\n", "\n"):gsub("\r", "\n")
+  local nextIndex = utf8.offset(text, 2, byteIndex)
 
-    local lines = {}
-    for line in text:gmatch("([^\n]*)\n?") do
-      table.insert(lines, line:match("^%s*(.-)%s*$"))
-    end
-    text = table.concat(lines, "\n")
-    text = text:gsub("^\n+", ""):gsub("\n+$", "")
+  if nextIndex then
+    return text:sub(byteIndex, nextIndex - 1), nextIndex
+  end
 
-    hs.pasteboard.setContents(text)
-    if ctx then
-      ctx.log.alert.success("Copied & trimmed")
-    end
+  return text:sub(byteIndex), #text + 1
+end
+
+function HK_typeClipboard()
+  local text = hs.pasteboard.getContents()
+
+  if not text or text == "" then
+    warn("Clipboard empty")
+    return
+  end
+
+  cancelTyping()
+
+  typingRunId = typingRunId + 1
+  local runId = typingRunId
+  local byteIndex = 1
+
+  registerCancelHotkey()
+
+  hs.timer.doAfter(INITIAL_DELAY, function()
+    if runId ~= typingRunId then return end
+
+    typingTimer = hs.timer.doEvery(KEY_DELAY, function()
+      if runId ~= typingRunId then
+        stopTyping()
+        return
+      end
+
+      local char
+      char, byteIndex = nextUtf8Char(text, byteIndex)
+
+      if not char then
+        stopTyping()
+        success("Typing complete")
+        return
+      end
+
+      hs.eventtap.keyStrokes(char)
+    end)
   end)
+end
+
+function M.cancelTypeClipboard()
+  cancelTyping("Typing cancelled")
 end
 
 function M.init(context)
   local result = require "core.utils.result"
 
   ctx = context
-
-  ctx.log.console.success("Clipboard feature initialized")
+  ctx.log.console.success("Clipboard typing initialized")
 
   return result.ok()
 end

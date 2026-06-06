@@ -1,31 +1,34 @@
 #!/bin/bash
 
-# Test script for Hammerspoon deep link window management
-# Make sure Hammerspoon is running and reloaded before testing
+# Test script for Hammerspoon deep links.
+# Deep links are auto-registered from config/hotkeys.hammerspoon.jsonc:
+# each hotkey action name becomes hammerspoon://<lowercase-action-name>.
+# Make sure Hammerspoon is running and reloaded before testing.
 
-echo "🧪 Testing Hammerspoon Deep Link Window Management"
-echo "=================================================="
+echo "🧪 Testing Hammerspoon Deep Links"
+echo "=================================="
 echo ""
 
-# Array of all deep link commands to test
+# Action names must match the third field of each entry in
+# config/hotkeys.hammerspoon.jsonc.
 commands=(
-    "winMaximize"
-    "winLeft"
-    "winRight" 
-    "winTop"
-    "winBottom"
-    "winTopLeft"
-    "winTopRight"
-    "winBottomLeft"
-    "winBottomRight"
-    "winMaximize"
+    "maximizeWindow"
+    "leftHalfWindow"
+    "rightHalfWindow"
+    "topHalfWindow"
+    "bottomHalfWindow"
+    "almostMaximizeWindow"
+    "restoreWindow"
+    "maximizeWindow"
 )
 
 # Function to test a single command
 test_command() {
     local cmd=$1
-    echo "Testing: hammerspoon://$cmd"
-    open "hammerspoon://$cmd"
+    local url_cmd
+    url_cmd=$(printf '%s' "$cmd" | tr '[:upper:]' '[:lower:]')
+    echo "Testing: hammerspoon://$url_cmd"
+    open "hammerspoon://$url_cmd"
     sleep 1
 }
 
@@ -37,14 +40,19 @@ done
 echo ""
 echo "✅ All deep link tests completed!"
 echo ""
-echo "Available commands:"
-echo "  hammerspoon://winMaximize    - Maximize window"
-echo "  hammerspoon://winLeft        - Left half"
-echo "  hammerspoon://winRight       - Right half" 
-echo "  hammerspoon://winTop         - Top half"
-echo "  hammerspoon://winBottom      - Bottom half"
-echo "  hammerspoon://winTopLeft     - Top-left quarter"
-echo "  hammerspoon://winTopRight    - Top-right quarter"
-echo "  hammerspoon://winBottomLeft  - Bottom-left quarter"
-echo "  hammerspoon://winBottomRight - Bottom-right quarter"
-echo "  hammerspoon://winMaximize    - Maximize window"
+echo "Available deep links (one per hotkey action):"
+echo "  hammerspoon://maximizewindow         - Maximize window"
+echo "  hammerspoon://almostmaximizewindow   - Almost maximize"
+echo "  hammerspoon://lefthalfwindow         - Left half"
+echo "  hammerspoon://righthalfwindow        - Right half"
+echo "  hammerspoon://tophalfwindow          - Top half"
+echo "  hammerspoon://bottomhalfwindow       - Bottom half"
+echo "  hammerspoon://restorewindow          - Restore window"
+echo "  hammerspoon://nextdesktop            - Next desktop"
+echo "  hammerspoon://previousdesktop        - Previous desktop"
+echo "  hammerspoon://screenshotcapturetext  - OCR screenshot"
+echo "  hammerspoon://screenshotcapturearea  - Area screenshot"
+echo "  hammerspoon://formatclipboard        - Format clipboard"
+echo ""
+echo "Note: any action listed in config/hotkeys.hammerspoon.jsonc is"
+echo "available as hammerspoon://<lowercase-action-name> automatically."

@@ -5,6 +5,37 @@ local M = {}
 
 local menubarItem = nil
 
+local function buildDeeplinkMenu(ctx)
+  local submenu = {}
+  local deeplinks = ctx.deeplinks or {}
+
+  if #deeplinks == 0 then
+    return {
+      title = "Deeplinks",
+      disabled = true
+    }
+  end
+
+  table.insert(submenu, {
+    title = "Click to run deeplink action.",
+    disabled = true
+  })
+
+  table.insert(submenu, { title = "-" })
+
+  for _, deeplink in ipairs(deeplinks) do
+    table.insert(submenu, {
+      title = deeplink.url,
+      fn = deeplink.action
+    })
+  end
+
+  return {
+    title = string.format("Deeplinks (%d)", #deeplinks),
+    menu = submenu
+  }
+end
+
 local function buildFeatureToggleItem(ctx, feature, statusByName)
   local featureState = ctx.features
   local enabled = true
@@ -220,6 +251,11 @@ function M.init(ctx)
     })
 
     table.insert(menu, { title = "-" })
+
+    table.insert(menu, buildDeeplinkMenu(ctx))
+
+    table.insert(menu, { title = "-" })
+
     table.insert(menu, {
       title = "Checked items are enabled. Click to toggle and reload.",
       disabled = true

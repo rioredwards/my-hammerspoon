@@ -5,6 +5,37 @@ local M = {}
 
 local ctx = nil
 
+local function registerDeeplink(actionName, action, deeplinks, seen)
+  if not actionName or actionName == "" then
+    return
+  end
+
+  local deeplinkName = string.lower(actionName)
+
+  if not action then
+    ctx.log.all.error("Error: Function 'HK_" .. actionName .. "' not found")
+    return
+  end
+
+  local runAction = function() action() end
+
+  hs.urlevent.bind(actionName, runAction)
+  if deeplinkName ~= actionName then
+    hs.urlevent.bind(deeplinkName, runAction)
+  end
+
+  if seen[deeplinkName] then
+    return
+  end
+
+  seen[deeplinkName] = true
+  table.insert(deeplinks, {
+    name = actionName,
+    url = "hammerspoon://" .. deeplinkName,
+    action = action,
+  })
+end
+
 -- Convert modifierKeys string (like "⌘⌥⌃") to mods array (like {"cmd", "alt", "ctrl"})
 function M.convertModifierKeysToMods(modifierKeysString)
   local modifierSymbolToName = {
@@ -119,6 +150,9 @@ function G_loadHotkeysFromJson()
     return {}
   end
 
+  local deeplinks = {}
+  local seenDeeplinks = {}
+
   local hotkeyJsonPath = ctx.constants.HOTKEY_JSON_PATH
 
   -- Expand ~ to home directory (io.open doesn't expand ~)
@@ -155,6 +189,15 @@ function G_loadHotkeysFromJson()
     return {}
   end
 
+  -- Register deeplink-only actions (no hotkey): each entry is an action name.
+  -- URLs are lowercase because URL hosts are case-insensitive and macOS lowercases them.
+  if jsonData.deeplinks and type(jsonData.deeplinks) == "table" then
+    for _, actionName in ipairs(jsonData.deeplinks) do
+      local action = actionName and actionName ~= "" and _G["HK_" .. actionName] or nil
+      registerDeeplink(actionName, action, deeplinks, seenDeeplinks)
+    end
+  end
+
   -- Transform JSON entries to format expected by bindAllHotkeys
   local hotkeysTable = {}
 
@@ -170,6 +213,10 @@ function G_loadHotkeysFromJson()
       action = _G[prefixedActionName]
       if not action then
         ctx.log.all.error("Error: Function '" .. prefixedActionName .. "' not found")
+      else
+        -- Auto-register a deep link for each action. Use lowercase URLs
+        -- because URL hosts are case-insensitive and macOS lowercases them.
+        registerDeeplink(actionName, action, deeplinks, seenDeeplinks)
       end
     end
 
@@ -185,6 +232,8 @@ function G_loadHotkeysFromJson()
       key    = key,
     })
   end
+
+  ctx.deeplinks = deeplinks
 
   return hotkeysTable
 end
