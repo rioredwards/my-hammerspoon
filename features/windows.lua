@@ -46,13 +46,10 @@ local RIGHT_CORNER_SNAPS = {
   { x = 0.5, y = 0.5, w = 0.5, h = 0.5 },
 }
 
-local maxStep = 0
-
 local function clearSnapCycle()
   snapCycle.winId = nil
   snapCycle.edge = nil
   snapCycle.step = 0
-  maxStep = 0
 end
 
 --- Usable rect for tiling: screen frame minus HUD strips (unit rects 0–1 map within this).
@@ -71,7 +68,7 @@ end
 local GAP = 4
 local HALF_GAP = GAP / 2
 
-local function tile(win, unit)
+local function getExpectedFrame(win, unit)
   local wa         = workAreaForWindow(win)
   local leftEdge   = unit.x
   local rightEdge  = unit.x + unit.w
@@ -83,12 +80,30 @@ local function tile(win, unit)
   local topPad     = math.abs(topEdge) < 0.001 and GAP or HALF_GAP
   local bottomPad  = math.abs(bottomEdge - 1) < 0.001 and GAP or HALF_GAP
 
-  win:setFrame({
+  return {
     x = wa.x + unit.x * wa.w + leftPad,
     y = wa.y + unit.y * wa.h + topPad,
     w = unit.w * wa.w - leftPad - rightPad,
     h = unit.h * wa.h - topPad - bottomPad,
-  }, 0)
+  }
+end
+
+local function tile(win, unit)
+  win:setFrame(getExpectedFrame(win, unit), 0)
+end
+
+local function findMatchingStep(win, rects)
+  local frame = win:frame()
+  for i, rect in ipairs(rects) do
+    local expected = getExpectedFrame(win, rect)
+    if math.abs(frame.x - expected.x) <= 2 and
+        math.abs(frame.y - expected.y) <= 2 and
+        math.abs(frame.w - expected.w) <= 2 and
+        math.abs(frame.h - expected.h) <= 2 then
+      return i
+    end
+  end
+  return nil
 end
 
 local function withFocused(fn)
@@ -102,7 +117,14 @@ end
 local function cycleSnaps(win, edge, rects)
   local id = win:id()
   local same = snapCycle.winId == id and snapCycle.edge == edge
-  local step = same and ((snapCycle.step + 1) % #rects) or 0
+  local step
+
+  if same then
+    step = (snapCycle.step + 1) % #rects
+  else
+    local matchIdx = findMatchingStep(win, rects)
+    step = matchIdx and (matchIdx % #rects) or 0
+  end
 
   tile(win, rects[step + 1])
 
@@ -137,12 +159,8 @@ local MAX_STEPS = {
 }
 
 function HK_maximizeWindow()
-  snapCycle.winId = nil
-  snapCycle.edge = nil
-  snapCycle.step = 0
   withFocused(function(win)
-    tile(win, MAX_STEPS[maxStep + 1])
-    maxStep = (maxStep + 1) % 3
+    cycleSnaps(win, "maximize", MAX_STEPS)
   end)
 end
 
