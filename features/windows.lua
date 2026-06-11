@@ -54,13 +54,27 @@ local function workAreaForWindow(win)
 end
 
 -- Second arg 0 disables transition; avoids moveToUnit so we respect HUD insets.
+-- Per-edge gap: full GAP on screen edges, half on shared edges (neighbor contributes the other half → equal gap everywhere).
+local GAP = 4
+local HALF_GAP = GAP / 2
+
 local function tile(win, unit)
   local wa = workAreaForWindow(win)
+  local leftEdge   = unit.x
+  local rightEdge  = unit.x + unit.w
+  local topEdge    = unit.y
+  local bottomEdge = unit.y + unit.h
+
+  local leftPad  = math.abs(leftEdge)   < 0.001 and GAP or HALF_GAP
+  local rightPad = math.abs(rightEdge  - 1) < 0.001 and GAP or HALF_GAP
+  local topPad   = math.abs(topEdge)    < 0.001 and GAP or HALF_GAP
+  local bottomPad= math.abs(bottomEdge - 1) < 0.001 and GAP or HALF_GAP
+
   win:setFrame({
-    x = wa.x + unit.x * wa.w,
-    y = wa.y + unit.y * wa.h,
-    w = unit.w * wa.w,
-    h = unit.h * wa.h,
+    x = wa.x + unit.x * wa.w + leftPad,
+    y = wa.y + unit.y * wa.h + topPad,
+    w = unit.w * wa.w - leftPad - rightPad,
+    h = unit.h * wa.h - topPad - bottomPad,
   }, 0)
 end
 
