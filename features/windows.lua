@@ -13,13 +13,13 @@ local insetBottomPx = 0
 local snapCycle = { winId = nil, edge = nil, step = 0 }
 
 local LEFT_SNAPS = {
-  { x = 0, y = 0, w = 0.5, h = 1 },
+  { x = 0, y = 0, w = 0.5,   h = 1 },
   { x = 0, y = 0, w = 1 / 3, h = 1 },
   { x = 0, y = 0, w = 2 / 3, h = 1 },
 }
 
 local RIGHT_SNAPS = {
-  { x = 0.5, y = 0, w = 0.5, h = 1 },
+  { x = 0.5,   y = 0, w = 0.5,   h = 1 },
   { x = 2 / 3, y = 0, w = 1 / 3, h = 1 },
   { x = 1 / 3, y = 0, w = 2 / 3, h = 1 },
 }
@@ -31,15 +31,28 @@ local TOP_SNAPS = {
 }
 
 local BOTTOM_SNAPS = {
-  { x = 0, y = 0.5, w = 1, h = 0.5 },
+  { x = 0, y = 0.5,   w = 1, h = 0.5 },
   { x = 0, y = 2 / 3, w = 1, h = 1 / 3 },
   { x = 0, y = 1 / 3, w = 1, h = 2 / 3 },
 }
+
+local LEFT_CORNER_SNAPS = {
+  { x = 0, y = 0,   w = 0.5, h = 0.5 },
+  { x = 0, y = 0.5, w = 0.5, h = 0.5 },
+}
+
+local RIGHT_CORNER_SNAPS = {
+  { x = 0.5, y = 0,   w = 0.5, h = 0.5 },
+  { x = 0.5, y = 0.5, w = 0.5, h = 0.5 },
+}
+
+local maxStep = 0
 
 local function clearSnapCycle()
   snapCycle.winId = nil
   snapCycle.edge = nil
   snapCycle.step = 0
+  maxStep = 0
 end
 
 --- Usable rect for tiling: screen frame minus HUD strips (unit rects 0–1 map within this).
@@ -59,16 +72,16 @@ local GAP = 4
 local HALF_GAP = GAP / 2
 
 local function tile(win, unit)
-  local wa = workAreaForWindow(win)
+  local wa         = workAreaForWindow(win)
   local leftEdge   = unit.x
   local rightEdge  = unit.x + unit.w
   local topEdge    = unit.y
   local bottomEdge = unit.y + unit.h
 
-  local leftPad  = math.abs(leftEdge)   < 0.001 and GAP or HALF_GAP
-  local rightPad = math.abs(rightEdge  - 1) < 0.001 and GAP or HALF_GAP
-  local topPad   = math.abs(topEdge)    < 0.001 and GAP or HALF_GAP
-  local bottomPad= math.abs(bottomEdge - 1) < 0.001 and GAP or HALF_GAP
+  local leftPad    = math.abs(leftEdge) < 0.001 and GAP or HALF_GAP
+  local rightPad   = math.abs(rightEdge - 1) < 0.001 and GAP or HALF_GAP
+  local topPad     = math.abs(topEdge) < 0.001 and GAP or HALF_GAP
+  local bottomPad  = math.abs(bottomEdge - 1) < 0.001 and GAP or HALF_GAP
 
   win:setFrame({
     x = wa.x + unit.x * wa.w + leftPad,
@@ -86,11 +99,13 @@ local function withFocused(fn)
 end
 
 --- Cycle half / third / two-thirds along one edge (same window + same half hotkey repeats).
-local function cycleEdgeThirds(win, edge, rects)
+local function cycleSnaps(win, edge, rects)
   local id = win:id()
   local same = snapCycle.winId == id and snapCycle.edge == edge
-  local step = same and ((snapCycle.step + 1) % 3) or 0
+  local step = same and ((snapCycle.step + 1) % #rects) or 0
+
   tile(win, rects[step + 1])
+
   snapCycle.winId = id
   snapCycle.edge = edge
   snapCycle.step = step
@@ -105,34 +120,29 @@ end
 
 function HK_bottomHalfWindow()
   withFocused(function(win)
-    cycleEdgeThirds(win, "bottom", BOTTOM_SNAPS)
-  end)
-end
-
-function HK_bottomLeftQuarterWindow()
-  clearSnapCycle()
-  withFocused(function(win)
-    tile(win, { x = 0, y = 0.5, w = 0.5, h = 0.5 })
-  end)
-end
-
-function HK_bottomRightQuarterWindow()
-  clearSnapCycle()
-  withFocused(function(win)
-    tile(win, { x = 0.5, y = 0.5, w = 0.5, h = 0.5 })
+    cycleSnaps(win, "bottom", BOTTOM_SNAPS)
   end)
 end
 
 function HK_leftHalfWindow()
   withFocused(function(win)
-    cycleEdgeThirds(win, "left", LEFT_SNAPS)
+    cycleSnaps(win, "left", LEFT_SNAPS)
   end)
 end
 
+local MAX_STEPS = {
+  { x = 0,   y = 0,    w = 1,    h = 1 },
+  { x = 0.1, y = 0.06, w = 0.80, h = 0.88 },
+  { x = 0.2, y = 0.06, w = 0.60, h = 0.88 },
+}
+
 function HK_maximizeWindow()
-  clearSnapCycle()
+  snapCycle.winId = nil
+  snapCycle.edge = nil
+  snapCycle.step = 0
   withFocused(function(win)
-    tile(win, { x = 0, y = 0, w = 1, h = 1 })
+    tile(win, MAX_STEPS[maxStep + 1])
+    maxStep = (maxStep + 1) % 3
   end)
 end
 
@@ -144,27 +154,25 @@ end
 
 function HK_rightHalfWindow()
   withFocused(function(win)
-    cycleEdgeThirds(win, "right", RIGHT_SNAPS)
+    cycleSnaps(win, "right", RIGHT_SNAPS)
   end)
 end
 
 function HK_topHalfWindow()
   withFocused(function(win)
-    cycleEdgeThirds(win, "top", TOP_SNAPS)
+    cycleSnaps(win, "top", TOP_SNAPS)
   end)
 end
 
-function HK_topLeftQuarterWindow()
-  clearSnapCycle()
+function HK_leftCornerWindow()
   withFocused(function(win)
-    tile(win, { x = 0, y = 0, w = 0.5, h = 0.5 })
+    cycleSnaps(win, "leftCorner", LEFT_CORNER_SNAPS)
   end)
 end
 
-function HK_topRightQuarterWindow()
-  clearSnapCycle()
+function HK_rightCornerWindow()
   withFocused(function(win)
-    tile(win, { x = 0.5, y = 0, w = 0.5, h = 0.5 })
+    cycleSnaps(win, "rightCorner", RIGHT_CORNER_SNAPS)
   end)
 end
 
