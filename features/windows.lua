@@ -8,6 +8,8 @@ local ctx = nil
 -- Pixels to reserve at top/bottom of hs.screen:frame() for HUD bars (set from constants in init).
 local insetTopPx = 0
 local insetBottomPx = 0
+local insetLeftPx = 0
+local insetRightPx = 0
 
 -- { winId = number, edge = string, step = 0|1|2 }; step indexes the rects below (0-based after advance).
 local snapCycle = { winId = nil, edge = nil, step = 0 }
@@ -56,9 +58,9 @@ end
 local function workAreaForWindow(win)
   local f = win:screen():frame()
   return {
-    x = f.x,
+    x = f.x + insetLeftPx,
     y = f.y + insetTopPx,
-    w = f.w,
+    w = f.w - insetLeftPx - insetRightPx,
     h = f.h - insetTopPx - insetBottomPx,
   }
 end
@@ -83,8 +85,8 @@ local function getExpectedFrame(win, unit)
   return {
     x = wa.x + unit.x * wa.w + leftPad,
     y = wa.y + unit.y * wa.h + topPad,
-    w = unit.w * wa.w - leftPad - rightPad,
-    h = unit.h * wa.h - topPad - bottomPad,
+    w = unit.w * wa.w - leftPad - rightPad - insetLeftPx - insetRightPx,
+    h = unit.h * wa.h - topPad - bottomPad - insetTopPx - insetBottomPx,
   }
 end
 
@@ -213,6 +215,8 @@ function M.init(context)
 
   insetTopPx = ctx.constants.TILE_HUD_TOP_INSET_PX or 0
   insetBottomPx = ctx.constants.TILE_HUD_BOTTOM_INSET_PX or 0
+  insetLeftPx = ctx.constants.TILE_HUD_LEFT_INSET_PX or 0
+  insetRightPx = ctx.constants.TILE_HUD_RIGHT_INSET_PX or 0
 
   -- Instant resizes for any code that omits an explicit duration (default is 0.2).
   hs.window.animationDuration = 0
