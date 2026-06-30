@@ -208,6 +208,12 @@ function HK_previousDesktop()
   end
 end
 
+function HK_nextDisplay()
+  if ctx then
+    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/raycast/window-management/next-display")
+  end
+end
+
 function M.init(context)
   local result = require "core.utils.result"
 
