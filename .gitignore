@@ -2,3 +2,6 @@
 .claude/
 .codex/
 .agents/skills/rio-module-recenter
+
+# Machine-local hotkey overrides (see config/hotkeys.local.jsonc.example)
+config/hotkeys.local.jsonc

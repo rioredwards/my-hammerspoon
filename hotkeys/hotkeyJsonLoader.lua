@@ -145,6 +145,110 @@ function M.stripJsoncComments(jsonText)
   return table.concat(result)
 end
 
+-- Expand ~ to home directory (io.open doesn't expand ~)
+local function expandPath(path)
+  if path:sub(1, 1) == "~" then
+    local homeDir = os.getenv("HOME")
+    if homeDir then
+      return homeDir .. path:sub(2)
+    end
+  end
+  return path
+end
+
+-- Read + strip-comments + parse a single JSONC file.
+-- required=true logs an error if the file is missing/unparsable; required=false
+-- (used for the optional local overrides file) stays silent when just missing.
+function M.readJsoncFile(path, required)
+  local expandedPath = expandPath(path)
+
+  local file = io.open(expandedPath, "r")
+  if not file then
+    if required then
+      ctx.log.all.error("Error: Failed to open " .. path)
+    end
+    return nil
+  end
+
+  local jsonText = file:read("*all")
+  file:close()
+
+  local cleanedJsonText = M.stripJsoncComments(jsonText)
+  local jsonData = hs.json.decode(cleanedJsonText)
+
+  if not jsonData then
+    ctx.log.all.error("Error: Failed to parse " .. path)
+    return nil
+  end
+
+  return jsonData
+end
+
+-- Merge local override data onto base data.
+-- hotkeys: entries matched by [modifierKeys, keySymbol] combo; local entries
+-- replace matching base entries, or are appended if the combo is new.
+-- deeplinks: union, base order first.
+-- appLayers: shallow merge, local keys take precedence.
+function M.mergeHotkeyData(base, overrideData)
+  if not overrideData then
+    return base
+  end
+
+  local merged = { hotkeys = {}, deeplinks = {}, appLayers = {} }
+
+  local comboIndex = {}
+  for _, entry in ipairs(base.hotkeys or {}) do
+    table.insert(merged.hotkeys, entry)
+    comboIndex[tostring(entry[1]) .. "|" .. tostring(entry[2])] = #merged.hotkeys
+  end
+  for _, entry in ipairs(overrideData.hotkeys or {}) do
+    local comboKey = tostring(entry[1]) .. "|" .. tostring(entry[2])
+    if comboIndex[comboKey] then
+      merged.hotkeys[comboIndex[comboKey]] = entry
+    else
+      table.insert(merged.hotkeys, entry)
+      comboIndex[comboKey] = #merged.hotkeys
+    end
+  end
+
+  local seenDeeplinks = {}
+  for _, name in ipairs(base.deeplinks or {}) do
+    if not seenDeeplinks[name] then
+      table.insert(merged.deeplinks, name)
+      seenDeeplinks[name] = true
+    end
+  end
+  for _, name in ipairs(overrideData.deeplinks or {}) do
+    if not seenDeeplinks[name] then
+      table.insert(merged.deeplinks, name)
+      seenDeeplinks[name] = true
+    end
+  end
+
+  for k, v in pairs(base.appLayers or {}) do
+    merged.appLayers[k] = v
+  end
+  for k, v in pairs(overrideData.appLayers or {}) do
+    merged.appLayers[k] = v
+  end
+
+  return merged
+end
+
+-- Load base hotkeys.hammerspoon.jsonc, merged with the optional
+-- hotkeys.local.jsonc overrides file if present.
+function M.loadMergedJsonData()
+  local base = M.readJsoncFile(ctx.constants.HOTKEY_JSON_PATH, true)
+  if not base then
+    return nil
+  end
+
+  local localPath = ctx.constants.HOTKEY_JSON_LOCAL_PATH
+  local overrideData = localPath and M.readJsoncFile(localPath, false) or nil
+
+  return M.mergeHotkeyData(base, overrideData)
+end
+
 function G_loadHotkeysFromJson()
   if not ctx then
     return {}
@@ -153,34 +257,8 @@ function G_loadHotkeysFromJson()
   local deeplinks = {}
   local seenDeeplinks = {}
 
-  local hotkeyJsonPath = ctx.constants.HOTKEY_JSON_PATH
-
-  -- Expand ~ to home directory (io.open doesn't expand ~)
-  if hotkeyJsonPath:sub(1, 1) == "~" then
-    local homeDir = os.getenv("HOME")
-    if homeDir then
-      hotkeyJsonPath = homeDir .. hotkeyJsonPath:sub(2)
-    end
-  end
-
-  -- Read file as text to support JSONC comments
-  local file = io.open(hotkeyJsonPath, "r")
-  if not file then
-    ctx.log.all.error("Error: Failed to open hotkeys.hammerspoon.jsonc")
-    return {}
-  end
-
-  local jsonText = file:read("*all")
-  file:close()
-
-  -- Strip JSONC comments
-  local cleanedJsonText = M.stripJsoncComments(jsonText)
-
-  -- Parse JSON
-  local jsonData = hs.json.decode(cleanedJsonText)
-
+  local jsonData = M.loadMergedJsonData()
   if not jsonData then
-    ctx.log.all.error("Error: Failed to parse hotkeys.hammerspoon.jsonc")
     return {}
   end
 
@@ -244,34 +322,8 @@ function G_loadAppLayersFromJson()
     return {}
   end
 
-  local hotkeyJsonPath = ctx.constants.HOTKEY_JSON_PATH
-
-  -- Expand ~ to home directory
-  if hotkeyJsonPath:sub(1, 1) == "~" then
-    local homeDir = os.getenv("HOME")
-    if homeDir then
-      hotkeyJsonPath = homeDir .. hotkeyJsonPath:sub(2)
-    end
-  end
-
-  -- Read file as text to support JSONC comments
-  local file = io.open(hotkeyJsonPath, "r")
-  if not file then
-    ctx.log.all.error("Error: Failed to open hotkeys.hammerspoon.jsonc for app layers")
-    return {}
-  end
-
-  local jsonText = file:read("*all")
-  file:close()
-
-  -- Strip JSONC comments
-  local cleanedJsonText = M.stripJsoncComments(jsonText)
-
-  -- Parse JSON
-  local jsonData = hs.json.decode(cleanedJsonText)
-
+  local jsonData = M.loadMergedJsonData()
   if not jsonData then
-    ctx.log.all.error("Error: Failed to parse hotkeys.hammerspoon.jsonc for app layers")
     return {}
   end
 

@@ -1,0 +1,15 @@
+// Machine-local hotkey overrides. Copy this file to hotkeys.local.jsonc
+// (gitignored, not tracked) to override or add hotkeys without touching
+// the shared hotkeys.hammerspoon.jsonc.
+//
+// Entries here are merged onto the base file:
+// - Same [modifierKeys, keySymbol] combo as a base entry -> replaces it.
+// - New combo -> appended.
+// - "deeplinks" -> unioned with base.
+// - "appLayers" -> merged, local keys take precedence.
+{
+  "hotkeys": [
+    // ["⌘⌥⌃", "V", "someOtherAction"]
+  ],
+  "deeplinks": [],
+}

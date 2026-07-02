@@ -23,6 +23,9 @@ constants.TILE_HUD_RIGHT_INSET_PX = 10
 
 -- Hotkey JSON loader
 constants.HOTKEY_JSON_PATH = "~/.hammerspoon/config/hotkeys.hammerspoon.jsonc"
+-- Optional machine-local overrides (gitignored). Entries here override base
+-- entries with the same [modifierKeys, keySymbol] combo, or add new ones.
+constants.HOTKEY_JSON_LOCAL_PATH = "~/.hammerspoon/config/hotkeys.local.jsonc"
 
 -- Alert message max length
 constants.ALERT_MESSAGE_MAX_LENGTH = 100
