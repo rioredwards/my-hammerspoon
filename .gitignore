@@ -5,3 +5,6 @@
 
 # Machine-local hotkey overrides (see config/hotkeys.local.jsonc.example)
 config/hotkeys.local.jsonc
+
+# Machine-local constant overrides (see config/constants.local.lua.example)
+config/constants.local.lua

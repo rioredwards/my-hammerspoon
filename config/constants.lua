@@ -124,4 +124,21 @@ constants.ALERT_STYLE_DEFAULT = {
   padding = constants.ALERT_STYLE_BASE.padding,
 }
 
+-- Merge machine-local overrides if present (gitignored constants.local.lua,
+-- see config/constants.local.lua.example). File must `return { KEY = value, ... }`;
+-- any top-level key here replaces the matching constants.KEY.
+local localConstantsPath = hs.configdir .. "/config/constants.local.lua"
+local localFile = io.open(localConstantsPath, "r")
+if localFile then
+  localFile:close()
+  local ok, localOverrides = pcall(dofile, localConstantsPath)
+  if ok and type(localOverrides) == "table" then
+    for k, v in pairs(localOverrides) do
+      constants[k] = v
+    end
+  else
+    print("Error: failed to load constants.local.lua: " .. tostring(localOverrides))
+  end
+end
+
 return constants

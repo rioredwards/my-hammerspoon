@@ -1,0 +1,11 @@
+-- Machine-local constant overrides. Copy this file to constants.local.lua
+-- (gitignored, not tracked) to override values from config/constants.lua
+-- without touching the shared file.
+--
+-- Any top-level key here replaces the matching constants.KEY. Return a
+-- plain table, no `local constants = {}` boilerplate needed.
+
+return {
+  -- LOCK_SCREEN_TIME = "23:00",
+  -- TILE_HUD_RIGHT_INSET_PX = 0,
+}
