@@ -10,9 +10,40 @@ local throttleTimer = nil
 local lastReloadTime = 0
 local pathWatchers = {}
 
+-- Ignore changes under these subpaths (VCS metadata, editor state, OS junk)
+-- Otherwise unrelated writes there (git status, VSCode, gitstatusd, etc.)
+-- retrigger hs.reload() since we watch hs.configdir recursively.
+local IGNORE_PATTERNS = {
+  "/%.git/",
+  "/%.git$",
+  "/%.vscode/",
+  "/%.cursor/",
+  "/%.DS_Store$",
+}
+
+local function shouldIgnore(paths)
+  for _, path in ipairs(paths or {}) do
+    local ignored = false
+    for _, pattern in ipairs(IGNORE_PATTERNS) do
+      if path:match(pattern) then
+        ignored = true
+        break
+      end
+    end
+    if not ignored then
+      return false
+    end
+  end
+  return true
+end
+
 -- Throttled reload function
-local function throttledReload()
+local function throttledReload(paths)
   if not ctx then
+    return
+  end
+
+  if shouldIgnore(paths) then
     return
   end
 
