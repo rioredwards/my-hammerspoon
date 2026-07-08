@@ -27,6 +27,9 @@ constants.HOTKEY_JSON_PATH = "~/.hammerspoon/config/hotkeys.hammerspoon.jsonc"
 -- entries with the same [modifierKeys, keySymbol] combo, or add new ones.
 constants.HOTKEY_JSON_LOCAL_PATH = "~/.hammerspoon/config/hotkeys.local.jsonc"
 
+-- Screenshot save directory (iCloud Drive). Leading ~ is expanded at use.
+constants.SCREENSHOT_DIR = "~/Library/Mobile Documents/com~apple~CloudDocs/screenshots"
+
 -- Alert message max length
 constants.ALERT_MESSAGE_MAX_LENGTH = 100
 

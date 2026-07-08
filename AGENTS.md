@@ -31,6 +31,10 @@ return M
 - No `init`, or no return value, is treated as a legacy success.
 - `ctx` provides: `ctx.log` (`.console` / `.alert` / `.all`, each with `.log/.warn/.error/.success`), `ctx.constants`, `ctx.utils`, `ctx.status`, `ctx.notify(msg, level, dur)`, `ctx.features` (`isEnabled`/`setEnabled`/`toggle`/`isLocked`/`list`).
 
+### Config constants
+
+Configurable values (paths, timings, colors, dimensions, ports) live in `config/constants.lua` and are read at runtime via `ctx.constants.<NAME>`. Add new tunables there — don't hardcode them inline in features. Path constants may use a leading `~`; expand it at the use site (e.g. `SCREENSHOT_DIR`, `HOTKEY_JSON_PATH`).
+
 ### Hotkeys
 
 Hotkeys are **not** wired in Lua per feature. A feature exposes a **global** function named `HK_<action>` (e.g. `function HK_launchSlack()`). Bindings live in `config/hotkeys.hammerspoon.jsonc`, keyed by `<action>`; the loader resolves them by prefixing `HK_` and looking up global scope. So a hotkey action must be a global `HK_` function, not a module export.
