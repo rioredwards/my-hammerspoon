@@ -73,6 +73,7 @@ local features = {
   { name = "reloadConfigurationDebounced",           path = "features.reloadConfigurationDebounced" },
   { name = "screenshot",                             path = "features.screenshot" },
   { name = "daybar",                                  path = "features.daybar" },
+  { name = "myControls",                             path = "features.myControls" },
   { name = "clipboard",                              path = "features.clipboard" },
   { name = "appSwitcher",                            path = "features.appSwitcher" },
   { name = "iterm2",                                 path = "features.iterm2" },
