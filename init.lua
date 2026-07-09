@@ -72,7 +72,7 @@ local features = {
   -- { name = "lockScreen",                             path = "features.lockScreen" },
   { name = "reloadConfigurationDebounced",           path = "features.reloadConfigurationDebounced" },
   { name = "screenshot",                             path = "features.screenshot" },
-  { name = "daybar",                                  path = "features.daybar" },
+  { name = "todaybar",                                path = "features.todaybar" },
   { name = "myControls",                             path = "features.myControls" },
   { name = "clipboard",                              path = "features.clipboard" },
   { name = "appSwitcher",                            path = "features.appSwitcher" },
