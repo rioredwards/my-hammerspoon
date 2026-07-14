@@ -8,3 +8,6 @@ config/hotkeys.local.jsonc
 
 # Machine-local constant overrides (see config/constants.local.lua.example)
 config/constants.local.lua
+
+# ignore all local agent skill symlinks (not one-by-one)
+.agents/skills/
