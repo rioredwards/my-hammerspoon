@@ -62,6 +62,7 @@ end
 local features = {
   -- Status dashboard (load early to track other features)
   { name = "statusDashboard",                        path = "features.statusDashboard",                       locked = true },
+  { name = "straightawayDashboard",                  path = "features.straightawayDashboard" },
   -- Utility features
   { name = "windows",                                path = "features.windows" },
   { name = "showCalendar",                           path = "features.showCalendar" },
