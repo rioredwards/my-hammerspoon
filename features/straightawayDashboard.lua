@@ -32,8 +32,8 @@ local KEYCHAIN = {
 
 local TARGETS = {
   githubRepo = "straightaway-cocktails/straight_away_app", -- GitHub Actions CI
-  sentryOrg = "ORG", -- TODO: Rio to provide (not in repo)
-  sentryProject = "PROJECT", -- TODO: Rio to provide (not in repo)
+  sentryOrg = "straightaway-yr",
+  sentryProject = "python-flask",
   productionUrl = "https://straightawayapp-production.up.railway.app",
   healthPath = "/healthz", -- returns 200 {status:ok} / 503 {status:degraded}
   -- Railway deploy status (GraphQL). IDs for project "straightaway app".
