@@ -82,6 +82,7 @@ local features = {
   { name = "search",                                 path = "features.search" },
   { name = "pickColor",                              path = "features.pickColor" },
   { name = "playAgentAudio",                         path = "features.playAgentAudio" },
+  { name = "agentAudioWebview",                      path = "features.agentAudioWebview" },
   { name = "larryPet",                               path = "features.larryPet" },
   { name = "automationCue",                          path = "features.automationCue" },
   { name = "clipboardFormatter",                      path = "features.clipboardFormatter" },
