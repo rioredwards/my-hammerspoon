@@ -63,6 +63,40 @@ local STATUS_ICON = {
 -- Worst-status-wins ordering for the aggregate menubar icon.
 local STATUS_RANK = { error = 3, warn = 2, unknown = 1, ok = 0 }
 
+-- Dot colors for the menubar status icon. Placeholder palette -- refine later.
+local STATUS_COLOR = {
+  ok = { red = 0.30, green = 0.78, blue = 0.35, alpha = 1 },
+  warn = { red = 0.98, green = 0.74, blue = 0.18, alpha = 1 },
+  error = { red = 0.90, green = 0.27, blue = 0.24, alpha = 1 },
+  unknown = { red = 0.55, green = 0.55, blue = 0.55, alpha = 1 },
+}
+
+local ICON_SIZE = 16
+local iconCache = {}
+
+-- Render a filled circle for `status` as an hs.image. Cached per status, so a
+-- refresh that doesn't change the aggregate reuses the same image object.
+local function statusIcon(status)
+  if iconCache[status] then
+    return iconCache[status]
+  end
+  local canvas = hs.canvas.new({ x = 0, y = 0, w = ICON_SIZE, h = ICON_SIZE })
+  if not canvas then
+    error("statusIcon: hs.canvas.new failed for status " .. tostring(status))
+  end
+  canvas[1] = {
+    type = "circle",
+    action = "fill",
+    fillColor = STATUS_COLOR[status] or STATUS_COLOR.unknown,
+    center = { x = ICON_SIZE / 2, y = ICON_SIZE / 2 },
+    radius = ICON_SIZE / 2 - 3,
+  }
+  local img = canvas:imageFromCanvas()
+  canvas:delete()
+  iconCache[status] = img
+  return img
+end
+
 -- ----------------------------------------------------------------------------
 -- Helpers
 -- ----------------------------------------------------------------------------
@@ -364,14 +398,20 @@ function M.updateMenubar()
   if not menubarItem then
     return
   end
-  local agg = aggregateStatus()
-  menubarItem:setTitle((STATUS_ICON[agg] or "⏳") .. " SA")
+  -- Status rides on the icon, not the title. The title stays constant so
+  -- Bartender keeps treating this as the same pinned item; only the icon
+  -- pixels change. template=false stops macOS tinting the dot monochrome.
+  menubarItem:setIcon(statusIcon(aggregateStatus()), false)
 end
 
 local function buildMenu()
   local menu = {}
 
-  table.insert(menu, { title = "Straightaway Status", disabled = true })
+  local agg = aggregateStatus()
+  table.insert(menu, {
+    title = (STATUS_ICON[agg] or "⏳") .. "  Straightaway Status",
+    disabled = true,
+  })
   table.insert(menu, { title = "-" })
 
   for _, def in ipairs(SERVICES) do
@@ -413,8 +453,12 @@ function M.init(ctx)
     return result.fail("INIT_FAILED", "Failed to create menubar item")
   end
 
-  menubarItem:setTitle("⏳ SA")
+  -- Static title so Bartender/macOS can reliably pin this item. A title that
+  -- changes with status makes Bartender treat each update as a new, unknown
+  -- item and hide it -- so status lives on the icon instead.
+  menubarItem:setTitle("🍹")
   menubarItem:setMenu(buildMenu)
+  M.updateMenubar()
 
   -- Initial fetch shortly after load, then poll on an interval.
   hs.timer.doAfter(2, function()
