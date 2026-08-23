@@ -16,6 +16,14 @@ function HK_myControlsToggle()
   ctx.log.console.log("My Controls: toggle")
 end
 
+function HK_agentAudioReader()
+  local _, ok = hs.execute("open 'mycontrols-dev://reader' 2>/dev/null")
+  if not ok then
+    hs.execute("open 'mycontrols://reader'")
+  end
+  ctx.log.console.log("My Controls: Agent Audio reader")
+end
+
 function M.init(context)
   local result = require "core.utils.result"
   ctx = context
