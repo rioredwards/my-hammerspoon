@@ -17,11 +17,11 @@ function HK_myControlsToggle()
 end
 
 function HK_agentAudioReader()
-  local _, ok = hs.execute("open 'mycontrols-dev://reader' 2>/dev/null")
+  local _, ok = hs.execute("open 'mycontrols-dev://reader/toggle' 2>/dev/null")
   if not ok then
-    hs.execute("open 'mycontrols://reader'")
+    hs.execute("open 'mycontrols://reader/toggle'")
   end
-  ctx.log.console.log("My Controls: Agent Audio reader")
+  ctx.log.console.log("My Controls: toggle Agent Audio reader")
 end
 
 function M.init(context)
