@@ -1,4 +1,4 @@
--- Open YouTube links in correct Chrome profile using URLDispatcher
+-- Open YouTube and GitHub links in the Gmail Chrome profile using URLDispatcher
 
 local M = {}
 
@@ -23,10 +23,10 @@ function M.init(context)
     return result.fail("DEPENDENCY_MISSING", "URLDispatcher spoon not found after loading", { level = "warn" })
   end
 
-  -- Configure URLDispatcher for YouTube links
+  -- Configure URLDispatcher for YouTube and GitHub links
   spoon.URLDispatcher.url_patterns = {
     {
-      { "youtube%.com", "youtu%.be" }, -- Patterns for YouTube URLs
+      { "youtube%.com", "youtu%.be", "^https?://github%.com[/%?#:]", "^https?://github%.com$" },
       function(url)
         -- Path to the Google Chrome executable
         local chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -39,7 +39,7 @@ function M.init(context)
     }
   }
 
-  -- All other URLs will be opened by the default handler (Safari).
+  -- All other URLs will be opened by the default Chrome handler.
   spoon.URLDispatcher.default_handler = "com.google.Chrome"
 
   -- Start the URLDispatcher
