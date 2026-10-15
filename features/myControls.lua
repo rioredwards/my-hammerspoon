@@ -4,24 +4,28 @@ local M = {}
 
 local ctx = nil
 
+-- Starts the always-on dev app under pm2 if it is down, waits until it answers,
+-- then fires the link. Firing first while it is down opens a bare Electron window.
+local ENSURE = os.getenv("HOME") .. "/dev/my-controls/scripts/ensure-running.sh"
+
+local function openLink(url, label)
+  hs.task.new("/bin/zsh", function(code, _, stderr)
+    if code ~= 0 then
+      hs.alert.show("My Controls did not start: " .. stderr)
+      ctx.log.console.error("My Controls: " .. stderr)
+      return
+    end
+    hs.execute("open '" .. url .. "'")
+    ctx.log.console.log("My Controls: " .. label)
+  end, { "-lc", "'" .. ENSURE .. "'" }):start()
+end
+
 function HK_myControlsToggle()
-  -- Dev (`npm run dev`) and the packaged build register different URL schemes so
-  -- they don't fight over one Launch Services handler (a dev hotkey hitting a
-  -- stale build). Try dev first; if no app claims it, fall back to packaged.
-  -- Whichever instance is alive wins.
-  local _, ok = hs.execute("open 'mycontrols-dev://window/toggle' 2>/dev/null")
-  if not ok then
-    hs.execute("open 'mycontrols://window/toggle'")
-  end
-  ctx.log.console.log("My Controls: toggle")
+  openLink("mycontrols-dev://window/toggle", "toggle")
 end
 
 function HK_agentAudioReader()
-  local _, ok = hs.execute("open 'mycontrols-dev://reader/toggle' 2>/dev/null")
-  if not ok then
-    hs.execute("open 'mycontrols://reader/toggle'")
-  end
-  ctx.log.console.log("My Controls: toggle Agent Audio reader")
+  openLink("mycontrols-dev://reader/toggle", "toggle Agent Audio reader")
 end
 
 function M.init(context)
