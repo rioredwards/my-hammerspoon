@@ -347,6 +347,7 @@ local function showHotkeyReferenceFromJson()
       :allowTextEntry(true)
       :windowStyle(hs.webview.windowMasks.titled | hs.webview.windowMasks.closable | hs.webview.windowMasks.resizable |
         hs.webview.windowMasks.miniaturizable | hs.webview.windowMasks.nonactivating)
+      :closeOnEscape(true)
       :deleteOnClose(true)
       :windowTitle("Hotkey Reference")
       :transparent(false)
