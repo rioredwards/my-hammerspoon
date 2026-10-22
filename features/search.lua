@@ -1,8 +1,14 @@
--- Raycast deep link URLs for window management
+-- Raycast search commands
 
 local M = {}
 
 local ctx = nil
+
+function HK_searchAgentSessions()
+  if ctx then
+    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/rio_edwards/sesh/sesh")
+  end
+end
 
 function HK_searchDirectories()
   if ctx then
