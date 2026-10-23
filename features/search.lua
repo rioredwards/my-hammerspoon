@@ -10,6 +10,12 @@ function HK_searchAgentSessions()
   end
 end
 
+function HK_replyOptions()
+  if ctx then
+    ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/rio_edwards/rio-raycast-toolbox/reply-options")
+  end
+end
+
 function HK_searchDirectories()
   if ctx then
     ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/mrpunkin/raycast-zoxide/search-directories")
