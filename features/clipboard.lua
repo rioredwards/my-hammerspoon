@@ -1,4 +1,4 @@
--- Clipboard typing utility
+-- Clipboard utilities
 
 local M = {}
 
@@ -66,6 +66,10 @@ local function nextUtf8Char(text, byteIndex)
   end
 
   return text:sub(byteIndex), #text + 1
+end
+
+function HK_aiTextTransform()
+  ctx.utils.openDeepLinkWithoutFocusingApp("raycast://extensions/rio_edwards/rio-raycast-toolbox/ai-text-transform")
 end
 
 function HK_typeClipboard()
