@@ -144,8 +144,10 @@ if localFile then
   end
 end
 
--- Focused agent session debug alert (features/focusedSession.lua)
+-- Focused agent session state file + debug alert (features/focusedSession.lua)
 constants.CLAUDE_SESSIONS_DIR = "~/Library/Application Support/Claude/claude-code-sessions"
+constants.CODEX_STATE_DB = "~/.codex/state_5.sqlite"
+constants.FOCUSED_SESSION_FILE = "~/.cache/focused-session.json" -- read by reply-options and other tools
 constants.FOCUSED_SESSION_SCAN_DAYS = 14 -- startup scan reads session files touched this recently
 constants.FOCUSED_SESSION_ALERT_STYLE = {
   fillColor       = constants.COLOR_BG_DEFAULT,
