@@ -6,7 +6,8 @@
 -- State file: the last agent session that was in front, kept when focus moves to
 -- another app (so a picker that steals focus still knows it):
 --   { v = 1, agent = "claude" | "codex", session = id, title, frontmost = true when that session's app is still in front,
---     focused_at = when it became the focused session, updated_at }
+--     focused_at = when it became the focused session, updated_at,
+--     recent = [{ agent, session, focused_at }] newest first, capped at FOCUSED_SESSION_RECENT_MAX }
 -- Keys are absent when unknown (no agent session seen yet, or no Codex thread
 -- matched the window title).
 --
@@ -29,6 +30,10 @@ local writtenKey = nil
 
 -- path -> { focusedAt, title, session }
 local claudeSessions = {}
+
+-- "agent|session" -> ISO focus time (UTC ISO strings sort by time). Codex has no
+-- focus store, so its entries only come from this history, kept across reloads.
+local recent = {}
 
 local function readSessionFile(path)
   local ok, data = pcall(hs.json.read, path)
@@ -126,6 +131,46 @@ local function iso(t)
   return os.date("!%Y-%m-%dT%H:%M:%SZ", t)
 end
 
+-- Newest first, capped. Claude entries take the store's lastFocusedAt when newer.
+local function recentList()
+  local times = {}
+  for k, t in pairs(recent) do
+    times[k] = t
+  end
+  for _, s in pairs(claudeSessions) do
+    if s.session and s.focusedAt > 0 then
+      local k, t = "claude|" .. s.session, iso(math.floor(s.focusedAt / 1000))
+      if not times[k] or t > times[k] then
+        times[k] = t
+      end
+    end
+  end
+  local list = {}
+  for k, t in pairs(times) do
+    local agent, session = k:match("^([^|]+)|(.+)$")
+    list[#list + 1] = { agent = agent, session = session, focused_at = t }
+  end
+  table.sort(list, function(a, b)
+    return a.focused_at > b.focused_at
+  end)
+  local max = ctx.constants.FOCUSED_SESSION_RECENT_MAX
+  for i = #list, max + 1, -1 do
+    list[i] = nil
+  end
+  return list
+end
+
+-- Seed the history from the last state file so a reload keeps Codex entries.
+local function loadRecent()
+  if not hs.fs.attributes(statePath) then
+    return
+  end
+  local data = assert(hs.json.read(statePath), "focusedSession: unreadable " .. statePath)
+  for _, r in ipairs(data.recent or {}) do
+    recent[r.agent .. "|" .. r.session] = r.focused_at
+  end
+end
+
 local function writeState(frontmost)
   local now = os.time()
   local state = {
@@ -136,6 +181,7 @@ local function writeState(frontmost)
     frontmost = frontmost,
     focused_at = last and iso(last.focusedAt),
     updated_at = iso(now),
+    recent = recentList(),
   }
   local tmp = statePath .. ".tmp"
   local f = assert(io.open(tmp, "w"))
@@ -150,6 +196,9 @@ local function refresh()
     local same = last and last.agent == focus.agent
       and (focus.session and focus.session == last.session or (not focus.session and focus.title == last.title))
     focus.focusedAt = same and last.focusedAt or os.time()
+    if not same and focus.session then
+      recent[focus.agent .. "|" .. focus.session] = iso(focus.focusedAt)
+    end
     last = focus
   end
   local frontmost = focus ~= nil
@@ -189,6 +238,7 @@ function M.init(context)
   hs.fs.mkdir(statePath:match("^(.*)/[^/]+$"))
 
   scanRecent(root, ctx.constants.FOCUSED_SESSION_SCAN_DAYS * 86400)
+  loadRecent()
 
   storeWatcher = hs.pathwatcher.new(root, function(paths)
     for _, path in ipairs(paths) do
