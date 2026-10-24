@@ -164,4 +164,20 @@ constants.FOCUSED_SESSION_ALERT_STYLE = {
   fadeOutDuration = 0,
 }
 
+-- Reply ring (features/replyRing.lua): what a ring bubble copied
+constants.REPLY_RING_ALERT_SECONDS = 4
+constants.REPLY_RING_ALERT_STYLE = {
+  fillColor       = constants.COLOR_BG_DEFAULT,
+  textColor       = constants.COLOR_FG,
+  strokeColor     = constants.COLOR_BORDER_DEFAULT,
+  textFont        = ".AppleSystemUIFont",
+  textSize        = 13,
+  radius          = 10,
+  strokeWidth     = 1,
+  atScreenEdge    = 0, -- center, clear of the focused-session alert
+  padding         = 8,
+  fadeInDuration  = 0,
+  fadeOutDuration = 0,
+}
+
 return constants

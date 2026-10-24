@@ -87,6 +87,7 @@ local features = {
   { name = "automationCue",                          path = "features.automationCue" },
   { name = "clipboardFormatter",                      path = "features.clipboardFormatter" },
   { name = "focusedSession",                          path = "features.focusedSession" },
+  { name = "replyRing",                               path = "features.replyRing" },
   -- Hotkey system (must be last)
   { name = "hotkeyJsonLoader",                       path = "hotkeys.hotkeyJsonLoader" },
   { name = "hotkeys",                                path = "hotkeys.hotkeys" },
